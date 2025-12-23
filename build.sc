@@ -222,23 +222,15 @@ trait Emulator extends Cross.Module2[String, String] {
         "--disable-annotation-unknown",
         "-dedup",
         "-O=debug",
-        "--split-verilog",
+        "--verilog",
         "--preserve-values=named",
         "--output-annotation-file=mfc.anno.json",
-        s"-o=${T.dest}"
+        s"-o=${T.dest}/rocket.sv"
       ).call(T.dest)
       PathRef(T.dest)
     }
-
     def rtls = T {
-      os.read(compile().path / "filelist.f").split("\n").map(str =>
-        try {
-          os.Path(str)
-        } catch {
-          case e: IllegalArgumentException if e.getMessage.contains("is not an absolute path") =>
-            compile().path / str.stripPrefix("./")
-        }
-      ).filter(p => p.ext == "v" || p.ext == "sv").map(PathRef(_)).toSeq
+      Seq(PathRef(compile().path / "rocket.sv"))
     }
   }
 
@@ -335,6 +327,10 @@ trait Emulator extends Cross.Module2[String, String] {
   def elf = T {
     verilator.elf()
   }
+
+  def rtls = T {
+    mfccompiler.rtls()
+  }
 }
 
 /** object to elaborate verilated emulators. */
@@ -409,6 +405,9 @@ object emulator extends Cross[Emulator](
   ("freechips.rocketchip.system.TestHarness", "freechips.rocketchip.system.LitexConfigBig8x2"),
   ("freechips.rocketchip.system.TestHarness", "freechips.rocketchip.system.LitexConfigBig8x4"),
   ("freechips.rocketchip.system.TestHarness", "freechips.rocketchip.system.LitexConfigBig8x8"),
+  // Snax
+  ("freechips.rocketchip.snax.SnaxSystem", "freechips.rocketchip.snax.SnaxConfig"),
+  ("freechips.rocketchip.system.TestHarness", "freechips.rocketchip.snax.SnaxConfig"),
 )
 
 object `runnable-riscv-test` extends mill.Cross[RiscvTest](
