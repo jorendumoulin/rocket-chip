@@ -38,8 +38,13 @@ class SnaxSystem(implicit p: Parameters) extends RocketSubsystem
 {
   // optionally add ROM devices
   // Note that setting BootROMLocated will override the reset_vector for all tiles
+  val bootRomParams = BootROMParams(
+    address = 0x10000,
+    size    = 0x10000,
+    hang    = 0x10000
+  )
   val bootROM  = p(BootROMLocated(location)).map { BootROM.attach(_, this, CBUS) }
-  val maskROMs = p(MaskROMLocated(location)).map { MaskROM.attach(_, this, CBUS) }
+  //val maskROMs = p(MaskROMLocated(location)).map { MaskROM.attach(_, this, CBUS) }
 
   override lazy val module = new ExampleRocketSystemModuleImp(this)
 }

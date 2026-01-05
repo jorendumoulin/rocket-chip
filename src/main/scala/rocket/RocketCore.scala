@@ -133,8 +133,8 @@ class CoreInterrupts(val hasBeu: Boolean)(implicit p: Parameters) extends TileIn
 trait HasRocketCoreIO extends HasRocketCoreParameters {
   implicit val p: Parameters
   def nTotalRoCCCSRs: Int
-  def traceIngressParams = TraceCoreParams(nGroups = 1, iretireWidth = coreParams.retireWidth, 
-                                            xlen = coreParams.xLen, iaddrWidth = coreParams.xLen) 
+  def traceIngressParams = TraceCoreParams(nGroups = 1, iretireWidth = coreParams.retireWidth,
+                                            xlen = coreParams.xLen, iaddrWidth = coreParams.xLen)
   val io = IO(new CoreBundle()(p) {
     val hartid = Input(UInt(hartIdLen.W))
     val reset_vector = Input(UInt(resetVectorLen.W))
@@ -846,7 +846,7 @@ class Rocket(tile: RocketTile)(implicit p: Parameters) extends CoreModule()(p)
     trace_ingress.io.in.trap_return := csr.io.trap_return
 
     io.trace_core_ingress.get.group(0) <> trace_ingress.io.out
-    io.trace_core_ingress.get.priv := csr.io.trace(0).priv 
+    io.trace_core_ingress.get.priv := csr.io.trace(0).priv
     io.trace_core_ingress.get.tval := csr.io.tval
     io.trace_core_ingress.get.cause := csr.io.cause
     io.trace_core_ingress.get.time := csr.io.time
@@ -1234,6 +1234,7 @@ class Rocket(tile: RocketTile)(implicit p: Parameters) extends CoreModule()(p)
   coreMonitorBundle.priv_mode := csr.io.trace(0).priv
 
   if (enableCommitLog) {
+    val log = SimLog.file("logfile.log")
     val t = csr.io.trace(0)
     val rd = wb_waddr
     val wfd = wb_ctrl.wfd
@@ -1242,26 +1243,26 @@ class Rocket(tile: RocketTile)(implicit p: Parameters) extends CoreModule()(p)
 
     when (t.valid && !t.exception) {
       when (wfd) {
-        printf ("%d 0x%x (0x%x) f%d p%d 0xXXXXXXXXXXXXXXXX\n", t.priv, t.iaddr, t.insn, rd, rd+32.U)
+        log.printf ("%d 0x%x (0x%x) f%d p%d 0xXXXXXXXXXXXXXXXX\n", t.priv, t.iaddr, t.insn, rd, rd+32.U)
       }
       .elsewhen (wxd && rd =/= 0.U && has_data) {
-        printf ("%d 0x%x (0x%x) x%d 0x%x\n", t.priv, t.iaddr, t.insn, rd, rf_wdata)
+        log.printf ("%d 0x%x (0x%x) x%d 0x%x\n", t.priv, t.iaddr, t.insn, rd, rf_wdata)
       }
       .elsewhen (wxd && rd =/= 0.U && !has_data) {
-        printf ("%d 0x%x (0x%x) x%d p%d 0xXXXXXXXXXXXXXXXX\n", t.priv, t.iaddr, t.insn, rd, rd)
+        log.printf ("%d 0x%x (0x%x) x%d p%d 0xXXXXXXXXXXXXXXXX\n", t.priv, t.iaddr, t.insn, rd, rd)
       }
       .otherwise {
-        printf ("%d 0x%x (0x%x)\n", t.priv, t.iaddr, t.insn)
+        log.printf ("%d 0x%x (0x%x)\n", t.priv, t.iaddr, t.insn)
       }
     }
 
     when (ll_wen && rf_waddr =/= 0.U) {
-      printf ("x%d p%d 0x%x\n", rf_waddr, rf_waddr, rf_wdata)
+      log.printf ("x%d p%d 0x%x\n", rf_waddr, rf_waddr, rf_wdata)
     }
   }
   else {
     when (csr.io.trace(0).valid) {
-      printf("C%d: %d [%d] pc=[%x] W[r%d=%x][%d] R[r%d=%x] R[r%d=%x] inst=[%x] DASM(%x)\n",
+      log.printf("C%d: %d [%d] pc=[%x] W[r%d=%x][%d] R[r%d=%x] R[r%d=%x] inst=[%x] DASM(%x)\n",
          io.hartid, coreMonitorBundle.timer, coreMonitorBundle.valid,
          coreMonitorBundle.pc,
          Mux(wb_ctrl.wxd || wb_ctrl.wfd, coreMonitorBundle.wrdst, 0.U),
